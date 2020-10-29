@@ -13,7 +13,7 @@ build: wire practicalpb
 run: wire practicalpb
 	APP_ENV=development \
 	PORT=8080 \
-	EVENT_STORE_CONNECTION_STRING="dbname=micro user=message_store password=postgres" \
+	EVENT_STORE_CONNECTION_STRING="dbname=message_store user=message_store password=postgres sslmode=disable" \
 	QUERY_CONNECTION_STRING=":6379" \
 	go run cmd/server/main.go
 
