@@ -24,7 +24,11 @@ func InitializeConfig(env *Env) (*Config, func(), error) {
 		return nil, nil, err
 	}
 	store := messagedb.NewMessageDB(db)
-	pool, cleanup2 := NewRedisPool(env)
+	pool, cleanup2, err := NewRedisPool(env)
+	if err != nil {
+		cleanup()
+		return nil, nil, err
+	}
 	query := identity.NewQueryRedis(pool)
 	viewingQuery := viewing.NewQueryRedis(pool)
 	passwordHasher := identity.NewPasswordHasherBcrypt()
