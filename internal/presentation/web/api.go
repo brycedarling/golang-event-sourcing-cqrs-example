@@ -33,10 +33,10 @@ var _ API = (*api)(nil)
 
 // Listen ...
 func (api *api) Listen() {
-	log.Printf("Starting server in %s on %s", api.env, api.listener.Addr())
+	log.Printf("Starting web API in %s on %s", api.env, api.listener.Addr())
 	err := http.Serve(api.listener, withGlobalMiddleware(api))
 	if err != nil && err != ErrShutdown {
-		log.Fatal(err)
+		log.Fatalf("Failed to serve: %v", err)
 	}
 }
 
