@@ -18,6 +18,7 @@ import (
 // Server ...
 type Server struct {
 	practicalpb.PracticalServiceServer
+	grpcServer   *grpc.Server
 	viewingQuery viewing.Query
 	eventStore   eventstore.Store
 	listener     net.Listener
@@ -33,22 +34,31 @@ func NewServer(conf *config.Config) (*Server, func(), error) {
 		return nil, nil, err
 	}
 
-	return &Server{
+	grpcServer := grpc.NewServer()
+
+	s := &Server{
 		env:          conf.Env.Env,
 		eventStore:   conf.EventStore,
 		viewingQuery: conf.ViewingQuery,
 		listener:     l,
-	}, shutdownListener, nil
+		grpcServer:   grpcServer,
+	}
+
+	practicalpb.RegisterPracticalServiceServer(grpcServer, s)
+
+	reflection.Register(grpcServer)
+
+	return s, func() {
+		shutdownListener()
+
+		grpcServer.GracefulStop()
+	}, nil
 }
 
 // Listen ...
 func (s *Server) Listen() {
-	grpcServer := grpc.NewServer()
-	practicalpb.RegisterPracticalServiceServer(grpcServer, s)
-	reflection.Register(grpcServer)
-
 	log.Printf("Starting gRPC server in %s on %s", s.env, s.listener.Addr())
-	if err := grpcServer.Serve(s.listener); err != nil && err != web.ErrShutdown {
+	if err := s.grpcServer.Serve(s.listener); err != nil && err != web.ErrShutdown {
 		log.Fatalf("Failed to serve: %v", err)
 	}
 }
