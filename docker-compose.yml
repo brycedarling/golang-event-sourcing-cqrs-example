@@ -1,0 +1,32 @@
+version: '3'
+services:
+  postgres:
+    image: postgres
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    expose:
+      - 5432
+
+  redis:
+    image: redis
+    volumes:
+      - redis-data:/var/lib/redis
+    expose:
+      - 6379
+
+  server:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - APP_ENV=${APP_ENV}
+      - PORT=${PORT}
+      - EVENT_STORE_CONNECTION_STRING=${EVENT_STORE_CONNECTION_STRING}
+      - QUERY_CONNECTION_STRING=${QUERY_CONNECTION_STRING}
+    links:
+      - postgres
+      - redis
+
+volumes:
+  pg-data:
+  redis-data:

@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package practical;
+option go_package="github.com/brycedarling/go-practical-microservices/proto/practical/v1;practicalpb";
+
+message Viewing {
+  int32 videos_watched = 1;
+}
+
+message ViewingRequest {}
+
+message ViewingResponse {
+  Viewing viewing = 1;
+}
+
+message RecordViewingRequest {
+  string video_id = 1;
+}
+
+message RecordViewingResponse {}
+
+service PracticalService {
+  rpc Viewing(ViewingRequest) returns (ViewingResponse) {};
+
+  rpc RecordViewing(RecordViewingRequest) returns (RecordViewingResponse) {};
+}
