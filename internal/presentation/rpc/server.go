@@ -10,6 +10,7 @@ import (
 	"github.com/brycedarling/go-practical-microservices/internal/eventstore"
 	"github.com/brycedarling/go-practical-microservices/internal/infrastructure/config"
 	"github.com/brycedarling/go-practical-microservices/internal/practicalpb"
+	"github.com/brycedarling/go-practical-microservices/internal/presentation/web"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )
@@ -19,14 +20,25 @@ type Server struct {
 	practicalpb.PracticalServiceServer
 	viewingQuery viewing.Query
 	eventStore   eventstore.Store
+	listener     net.Listener
 	env          string
 }
 
 var _ practicalpb.PracticalServiceServer = (*Server)(nil)
 
 // NewServer ...
-func NewServer(conf *config.Config) *Server {
-	return &Server{nil, conf.ViewingQuery, conf.EventStore, conf.Env.Env}
+func NewServer(conf *config.Config) (*Server, func(), error) {
+	l, shutdownListener, err := web.NewTCPListener(":50051")
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return &Server{
+		env:          conf.Env.Env,
+		eventStore:   conf.EventStore,
+		viewingQuery: conf.ViewingQuery,
+		listener:     l,
+	}, shutdownListener, nil
 }
 
 // Listen ...
@@ -35,13 +47,8 @@ func (s *Server) Listen() {
 	practicalpb.RegisterPracticalServiceServer(grpcServer, s)
 	reflection.Register(grpcServer)
 
-	lis, err := net.Listen("tcp", "0.0.0.0:50051")
-	if err != nil {
-		log.Fatalf("Failed to listen: %v", err)
-	}
-
-	log.Printf("Starting gRPC server in %s on %s", s.env, lis.Addr())
-	if err := grpcServer.Serve(lis); err != nil {
+	log.Printf("Starting gRPC server in %s on %s", s.env, s.listener.Addr())
+	if err := grpcServer.Serve(s.listener); err != nil && err != web.ErrShutdown {
 		log.Fatalf("Failed to serve: %v", err)
 	}
 }

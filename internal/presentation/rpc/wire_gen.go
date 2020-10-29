@@ -12,7 +12,12 @@ import (
 // Injectors from inject_server.go:
 
 // InitializeServer ...
-func InitializeServer(conf *config.Config) (*Server, error) {
-	server := NewServer(conf)
-	return server, nil
+func InitializeServer(conf *config.Config) (*Server, func(), error) {
+	server, cleanup, err := NewServer(conf)
+	if err != nil {
+		return nil, nil, err
+	}
+	return server, func() {
+		cleanup()
+	}, nil
 }

@@ -8,9 +8,9 @@ import (
 )
 
 // InitializeServer ...
-func InitializeServer(conf *config.Config) (*Server, error) {
+func InitializeServer(conf *config.Config) (*Server, func(), error) {
 	wire.Build(
 		NewServer,
 	)
-	return nil, nil
+	return nil, nil, nil
 }

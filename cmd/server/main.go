@@ -53,12 +53,12 @@ func main() {
 	c.Start()
 	defer c.Stop()
 
-	var apiShutdown func()
+	var webapiShutdown func()
 
 	if *webapiFlag {
 		go func() {
 			var api web.API
-			api, apiShutdown, err = web.InitializeAPI(conf)
+			api, webapiShutdown, err = web.InitializeAPI(conf)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "failed to initialize web api: %s\n", err)
 				os.Exit(1)
@@ -67,11 +67,14 @@ func main() {
 		}()
 	}
 
+	var grpcServerShutdown func()
+
 	if *grpcapiFlag {
 		go func() {
-			server, err := rpc.InitializeServer(conf)
+			var server *rpc.Server
+			server, grpcServerShutdown, err = rpc.InitializeServer(conf)
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "failed to initialize grpc api: %s\n", err)
+				fmt.Fprintf(os.Stderr, "failed to initialize grpc server: %s\n", err)
 				os.Exit(1)
 			}
 			server.Listen()
@@ -85,7 +88,10 @@ func main() {
 	// Block until a signal is received
 	<-ch
 
-	if apiShutdown != nil {
-		apiShutdown()
+	if webapiShutdown != nil {
+		webapiShutdown()
+	}
+	if grpcServerShutdown != nil {
+		grpcServerShutdown()
 	}
 }
