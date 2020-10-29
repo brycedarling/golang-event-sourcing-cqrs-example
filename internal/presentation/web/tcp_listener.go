@@ -2,42 +2,39 @@ package web
 
 import (
 	"errors"
-	"fmt"
 	"log"
 	"net"
 	"time"
-
-	"github.com/brycedarling/go-practical-microservices/internal/infrastructure/config"
 )
 
-// NewListener ...
-func NewListener(conf *config.Config) (net.Listener, func(), error) {
-	netListener, err := net.Listen("tcp", fmt.Sprintf(":%s", conf.Env.Port))
+// NewTCPListener ...
+func NewTCPListener(address string) (net.Listener, func(), error) {
+	netLis, err := net.Listen("tcp", address)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	tcpListener, ok := netListener.(*net.TCPListener)
+	tcpLis, ok := netLis.(*net.TCPListener)
 	if !ok {
-		return nil, nil, errors.New("Couldn't wrap listener")
+		return nil, nil, errors.New("Couldn't wrap listener as TCP")
 	}
 
-	l := &listener{
-		TCPListener: tcpListener,
+	l := &tcpListener{
+		TCPListener: tcpLis,
 		shutdown:    make(chan int),
 	}
 
 	return l, l.Shutdown, nil
 }
 
-type listener struct {
+type tcpListener struct {
 	*net.TCPListener
 	shutdown chan int
 }
 
-var _ net.Listener = (*listener)(nil)
+var _ net.Listener = (*tcpListener)(nil)
 
-func (l *listener) Accept() (net.Conn, error) {
+func (l *tcpListener) Accept() (net.Conn, error) {
 	for {
 		// Wait up to one second for a new connection
 		l.SetDeadline(time.Now().Add(time.Second))
@@ -63,8 +60,8 @@ func (l *listener) Accept() (net.Conn, error) {
 	}
 }
 
-func (l *listener) Shutdown() {
-	log.Printf("Closing listener on %s", l.Addr())
+func (l *tcpListener) Shutdown() {
+	log.Printf("Closing tcp listener on %s", l.Addr())
 
 	close(l.shutdown)
 
@@ -72,4 +69,4 @@ func (l *listener) Shutdown() {
 }
 
 // ErrShutdown ...
-var ErrShutdown = errors.New("listener is shutdown")
+var ErrShutdown = errors.New("tcp listener is shutdown")

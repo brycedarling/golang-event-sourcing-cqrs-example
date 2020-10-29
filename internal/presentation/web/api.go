@@ -1,6 +1,7 @@
 package web
 
 import (
+	"fmt"
 	"log"
 	"net"
 	"net/http"
@@ -15,12 +16,17 @@ type API interface {
 }
 
 // NewAPI ...
-func NewAPI(conf *config.Config, h Handlers, l net.Listener) API {
+func NewAPI(conf *config.Config, h Handlers) (API, func(), error) {
+	l, shutdownListener, err := NewTCPListener(fmt.Sprintf(":%s", conf.Env.Port))
+	if err != nil {
+		return nil, nil, err
+	}
+
 	return &api{
 		env:      conf.Env.Env,
 		handlers: h,
 		listener: l,
-	}
+	}, shutdownListener, nil
 }
 
 type api struct {

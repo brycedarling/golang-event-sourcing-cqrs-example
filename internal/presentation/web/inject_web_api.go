@@ -15,7 +15,6 @@ func InitializeAPI(conf *config.Config) (API, func(), error) {
 		NewRegisterHandler,
 		NewAuthenticationHandler,
 		NewHandlers,
-		NewListener,
 		NewAPI,
 	)
 	return nil, nil, nil

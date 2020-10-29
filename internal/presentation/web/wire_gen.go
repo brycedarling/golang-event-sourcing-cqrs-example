@@ -18,11 +18,10 @@ func InitializeAPI(conf *config.Config) (API, func(), error) {
 	registerHandler := NewRegisterHandler(conf)
 	authenticationHandler := NewAuthenticationHandler(conf)
 	handlers := NewHandlers(homeHandler, viewingHandler, registerHandler, authenticationHandler)
-	netListener, cleanup, err := NewListener(conf)
+	webAPI, cleanup, err := NewAPI(conf, handlers)
 	if err != nil {
 		return nil, nil, err
 	}
-	webAPI := NewAPI(conf, handlers, netListener)
 	return webAPI, func() {
 		cleanup()
 	}, nil
