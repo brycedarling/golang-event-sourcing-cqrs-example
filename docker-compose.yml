@@ -2,31 +2,69 @@ version: '3'
 services:
   postgres:
     image: postgres
+    container_name: postgres
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - DATABASE_NAME=${POSTGRES_DB}
+    restart: unless-stopped
     volumes:
-      - pg-data:/var/lib/postgresql/data
-    expose:
-      - 5432
+      - postgres-data:/var/lib/postgresql/data
+      - ./database/roles/message-store.sql:/docker-entrypoint-initdb.d/01-roles-message-store.sql
+      - ./database/schema/message-store.sql:/docker-entrypoint-initdb.d/02-schema-message-store.sql
+      - ./database/extensions/pgcrypto.sql:/docker-entrypoint-initdb.d/03-extensions-pgcrypto.sql
+      - ./database/tables/messages.sql:/docker-entrypoint-initdb.d/04-tables-messages.sql
+      - ./database/types/message.sql:/docker-entrypoint-initdb.d/05-types-message.sql
+      - ./database/functions/message-store-version.sql:/docker-entrypoint-initdb.d/06-functions-message-store-version.sql
+      - ./database/functions/hash-64.sql:/docker-entrypoint-initdb.d/07-functions-hash-64.sql
+      - ./database/functions/acquire-lock.sql:/docker-entrypoint-initdb.d/08-functions-acquire-lock.sql
+      - ./database/functions/category.sql:/docker-entrypoint-initdb.d/09-functions-category.sql
+      - ./database/functions/is-category.sql:/docker-entrypoint-initdb.d/10-functions-is-category.sql
+      - ./database/functions/id.sql:/docker-entrypoint-initdb.d/11-functions-id.sql
+      - ./database/functions/cardinal-id.sql:/docker-entrypoint-initdb.d/12-functions-cardinal-id.sql
+      - ./database/functions/stream-version.sql:/docker-entrypoint-initdb.d/13-functions-stream-version.sql
+      - ./database/functions/write-message.sql:/docker-entrypoint-initdb.d/14-functions-write-message.sql
+      - ./database/functions/get-stream-messages.sql:/docker-entrypoint-initdb.d/15-functions-get-stream-messages.sql
+      - ./database/functions/get-category-messages.sql:/docker-entrypoint-initdb.d/16-functions-get-category-messages.sql
+      - ./database/functions/get-last-stream-message.sql:/docker-entrypoint-initdb.d/17-functions-get-last-stream-message.sql
+      - ./database/views/stream-summary.sql:/docker-entrypoint-initdb.d/18-views-stream-summary.sql
+      - ./database/views/type-summary.sql:/docker-entrypoint-initdb.d/19-views-type-summary.sql
+      - ./database/views/stream-type-summary.sql:/docker-entrypoint-initdb.d/20-views-stream-type-summary.sql
+      - ./database/views/type-stream-summary.sql:/docker-entrypoint-initdb.d/21-views-type-stream-summary.sql
+      - ./database/views/category-type-summary.sql:/docker-entrypoint-initdb.d/22-views-category-type-summary.sql
+      - ./database/views/type-category-summary.sql:/docker-entrypoint-initdb.d/23-views-type-category-summary.sql
+      - ./database/privileges/schema.sql:/docker-entrypoint-initdb.d/24-privileges-schema.sql
+      - ./database/privileges/table.sql:/docker-entrypoint-initdb.d/25-privileges-table.sql
+      - ./database/privileges/sequence.sql:/docker-entrypoint-initdb.d/26-privileges-sequence.sql
+      - ./database/privileges/functions.sql:/docker-entrypoint-initdb.d/27-privileges-functions.sql
+      - ./database/privileges/views.sql:/docker-entrypoint-initdb.d/28-privileges-views.sql
+    ports:
+      - 5432:5432
 
   redis:
     image: redis
+    container_name: redis
+    command: redis-server --requirepass ${REDIS_PASSWORD}
     volumes:
       - redis-data:/var/lib/redis
-    expose:
-      - 6379
+    ports:
+      - 6379:6379
 
   server:
     build: .
     ports:
-      - "8080:8080"
+      - ${PORT}:${PORT}
     environment:
       - APP_ENV=${APP_ENV}
       - PORT=${PORT}
       - EVENT_STORE_CONNECTION_STRING=${EVENT_STORE_CONNECTION_STRING}
       - QUERY_CONNECTION_STRING=${QUERY_CONNECTION_STRING}
-    links:
+    depends_on:
       - postgres
       - redis
 
+
 volumes:
-  pg-data:
+  postgres-data:
   redis-data:
