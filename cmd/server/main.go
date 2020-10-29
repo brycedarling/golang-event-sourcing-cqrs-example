@@ -3,8 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
-	"net"
 	"os"
 	"os/signal"
 
@@ -12,11 +10,8 @@ import (
 	"github.com/brycedarling/go-practical-microservices/internal/application/identity"
 	"github.com/brycedarling/go-practical-microservices/internal/application/viewing"
 	"github.com/brycedarling/go-practical-microservices/internal/infrastructure/config"
-	"github.com/brycedarling/go-practical-microservices/internal/practicalpb"
 	"github.com/brycedarling/go-practical-microservices/internal/presentation/rpc"
 	"github.com/brycedarling/go-practical-microservices/internal/presentation/web"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/reflection"
 )
 
 var identityAggregatorFlag = flag.Bool("ia", true, "start identity aggregator")
@@ -74,24 +69,12 @@ func main() {
 
 	if *grpcapiFlag {
 		go func() {
-			s := grpc.NewServer()
 			server, err := rpc.InitializeServer(conf)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "failed to initialize grpc api: %s\n", err)
 				os.Exit(1)
 			}
-			practicalpb.RegisterPracticalServiceServer(s, server)
-			reflection.Register(s)
-
-			lis, err := net.Listen("tcp", "0.0.0.0:50051")
-			if err != nil {
-				log.Fatalf("Failed to listen: %v", err)
-			}
-
-			fmt.Println("gRPC running on 50051")
-			if err := s.Serve(lis); err != nil {
-				log.Fatalf("Failed to serve: %v", err)
-			}
+			server.Listen()
 		}()
 	}
 
