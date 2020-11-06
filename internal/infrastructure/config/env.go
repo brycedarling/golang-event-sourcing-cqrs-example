@@ -11,6 +11,8 @@ type Env struct {
 	Port                       string
 	EventStoreConnectionString string
 	QueryConnectionString      string
+	RedisDatabase              string
+	RedisPassword              string
 }
 
 // NewEnv ...
@@ -31,11 +33,21 @@ func NewEnv() (*Env, error) {
 	if err != nil {
 		return nil, err
 	}
+	redisDatabase, err := getEnv("REDIS_DATABASE")
+	if err != nil {
+		return nil, err
+	}
+	redisPassword, err := getEnv("REDIS_PASSWORD")
+	if err != nil {
+		return nil, err
+	}
 	return &Env{
 		Env:                        appEnv,
 		Port:                       port,
 		EventStoreConnectionString: eventStoreConnString,
 		QueryConnectionString:      queryConnString,
+		RedisDatabase:              redisDatabase,
+		RedisPassword:              redisPassword,
 	}, nil
 }
 

@@ -4,20 +4,21 @@ dest_dir=internal/practicalpb
 
 all: clean resetdb test build
 
-test: wire practicalpb
+test: wire
 	go test -v ./...
 
-build: wire practicalpb
+build: wire
 	go build -o bin/server cmd/server/main.go
 
-run: wire practicalpb
+run: wire
 	APP_ENV=development \
 	PORT=8080 \
 	EVENT_STORE_CONNECTION_STRING="dbname=message_store user=message_store password=postgres sslmode=disable" \
 	QUERY_CONNECTION_STRING=":6379" \
+	REDIS_PASSWORD="foo" \
 	go run cmd/server/main.go
 
-wire:
+wire: practicalpb
 	wire diff ./... | grep -q ^ && wire ./... || true
 
 clean:

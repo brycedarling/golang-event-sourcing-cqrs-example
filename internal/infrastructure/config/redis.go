@@ -14,7 +14,23 @@ func NewRedisPool(env *Env) (*redis.Pool, func(), error) {
 		// MaxIdle:   50,
 		// MaxActive: 10000,
 		Dial: func() (redis.Conn, error) {
-			return redis.Dial("tcp", env.QueryConnectionString)
+			c, err := redis.Dial("tcp", env.QueryConnectionString)
+			if err != nil {
+				return nil, err
+			}
+			if env.RedisPassword != "" {
+				if _, err := c.Do("AUTH", env.RedisPassword); err != nil {
+					c.Close()
+					return nil, err
+				}
+			}
+			if env.RedisDatabase != "" {
+				if _, err := c.Do("SELECT", env.RedisDatabase); err != nil {
+					c.Close()
+					return nil, err
+				}
+			}
+			return c, nil
 		},
 	}
 
@@ -38,6 +54,7 @@ func retryPingRedis(pool *redis.Pool) error {
 			if retry == maxRetriesPingRedis {
 				return err
 			}
+			log.Println(err)
 			retryingIn := time.Duration(5*(retry+1)) * time.Second
 			log.Printf("Couldn't ping redis, retrying in %s", retryingIn)
 			time.Sleep(retryingIn)
