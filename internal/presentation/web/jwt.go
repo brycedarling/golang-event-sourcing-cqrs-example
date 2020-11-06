@@ -18,15 +18,17 @@ func init() {
 	secretKey = []byte(secretKeyStr)
 }
 
-type customClaims struct {
+// CustomClaims ...
+type CustomClaims struct {
 	UserID string `json:"userID"`
 	jwt.StandardClaims
 }
 
 const twentyFourHours time.Duration = time.Duration(60*60*24) * time.Second
 
-func signJWT(userID string) (string, error) {
-	claims := customClaims{
+// SignJWT ...
+func SignJWT(userID string) (string, error) {
+	claims := CustomClaims{
 		UserID: userID,
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: time.Now().Add(twentyFourHours).Unix(),
@@ -37,10 +39,11 @@ func signJWT(userID string) (string, error) {
 	return token.SignedString(secretKey)
 }
 
-func parseJWT(authorization string) (*customClaims, error) {
+// ParseJWT ...
+func ParseJWT(authorization string) (*CustomClaims, error) {
 	token, err := jwt.ParseWithClaims(
 		authorization,
-		&customClaims{},
+		&CustomClaims{},
 		func(token *jwt.Token) (interface{}, error) {
 			return secretKey, nil
 		},
@@ -48,7 +51,7 @@ func parseJWT(authorization string) (*customClaims, error) {
 	if err != nil {
 		return nil, err
 	}
-	claims, ok := token.Claims.(*customClaims)
+	claims, ok := token.Claims.(*CustomClaims)
 	if !ok {
 		return nil, errors.New("Couldn't parse claims")
 	}

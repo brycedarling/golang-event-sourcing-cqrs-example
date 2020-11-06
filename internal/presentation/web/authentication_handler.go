@@ -101,7 +101,7 @@ func (h *AuthenticationHandler) decodeInput(r *http.Request) (input authenticate
 }
 
 func (h *AuthenticationHandler) writeJWT(w http.ResponseWriter, id *identity.Identity) error {
-	signedToken, err := signJWT(id.UserID)
+	signedToken, err := SignJWT(id.UserID)
 	if err != nil {
 		return err
 	}

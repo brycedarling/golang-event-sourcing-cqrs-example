@@ -17,6 +17,7 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type PracticalServiceClient interface {
+	Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginResponse, error)
 	Viewing(ctx context.Context, in *ViewingRequest, opts ...grpc.CallOption) (*ViewingResponse, error)
 	RecordViewing(ctx context.Context, in *RecordViewingRequest, opts ...grpc.CallOption) (*RecordViewingResponse, error)
 }
@@ -27,6 +28,15 @@ type practicalServiceClient struct {
 
 func NewPracticalServiceClient(cc grpc.ClientConnInterface) PracticalServiceClient {
 	return &practicalServiceClient{cc}
+}
+
+func (c *practicalServiceClient) Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginResponse, error) {
+	out := new(LoginResponse)
+	err := c.cc.Invoke(ctx, "/practical.PracticalService/Login", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *practicalServiceClient) Viewing(ctx context.Context, in *ViewingRequest, opts ...grpc.CallOption) (*ViewingResponse, error) {
@@ -51,6 +61,7 @@ func (c *practicalServiceClient) RecordViewing(ctx context.Context, in *RecordVi
 // All implementations must embed UnimplementedPracticalServiceServer
 // for forward compatibility
 type PracticalServiceServer interface {
+	Login(context.Context, *LoginRequest) (*LoginResponse, error)
 	Viewing(context.Context, *ViewingRequest) (*ViewingResponse, error)
 	RecordViewing(context.Context, *RecordViewingRequest) (*RecordViewingResponse, error)
 	mustEmbedUnimplementedPracticalServiceServer()
@@ -60,6 +71,9 @@ type PracticalServiceServer interface {
 type UnimplementedPracticalServiceServer struct {
 }
 
+func (UnimplementedPracticalServiceServer) Login(context.Context, *LoginRequest) (*LoginResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Login not implemented")
+}
 func (UnimplementedPracticalServiceServer) Viewing(context.Context, *ViewingRequest) (*ViewingResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Viewing not implemented")
 }
@@ -77,6 +91,24 @@ type UnsafePracticalServiceServer interface {
 
 func RegisterPracticalServiceServer(s *grpc.Server, srv PracticalServiceServer) {
 	s.RegisterService(&_PracticalService_serviceDesc, srv)
+}
+
+func _PracticalService_Login_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(LoginRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PracticalServiceServer).Login(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/practical.PracticalService/Login",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PracticalServiceServer).Login(ctx, req.(*LoginRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _PracticalService_Viewing_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -119,6 +151,10 @@ var _PracticalService_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "practical.PracticalService",
 	HandlerType: (*PracticalServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "Login",
+			Handler:    _PracticalService_Login_Handler,
+		},
 		{
 			MethodName: "Viewing",
 			Handler:    _PracticalService_Viewing_Handler,

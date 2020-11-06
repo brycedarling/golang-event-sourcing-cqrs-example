@@ -53,7 +53,7 @@ func addContextUserID(h http.Handler) http.Handler {
 		if authorization == "" {
 			h.ServeHTTP(w, r)
 		} else {
-			claims, err := parseJWT(authorization)
+			claims, err := ParseJWT(authorization)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusForbidden)
 			} else if claims != nil {

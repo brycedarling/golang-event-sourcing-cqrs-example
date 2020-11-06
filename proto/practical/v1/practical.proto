@@ -3,6 +3,15 @@ syntax = "proto3";
 package practical;
 option go_package="github.com/brycedarling/go-practical-microservices/proto/practical/v1;practicalpb";
 
+message LoginRequest {
+  string email = 1;
+  string password = 2;
+}
+
+message LoginResponse {
+  string access_token = 1;
+}
+
 message Viewing {
   int32 videos_watched = 1;
 }
@@ -20,6 +29,8 @@ message RecordViewingRequest {
 message RecordViewingResponse {}
 
 service PracticalService {
+  rpc Login(LoginRequest) returns (LoginResponse) {};
+
   rpc Viewing(ViewingRequest) returns (ViewingResponse) {};
 
   rpc RecordViewing(RecordViewingRequest) returns (RecordViewingResponse) {};
