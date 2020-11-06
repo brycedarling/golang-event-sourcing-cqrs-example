@@ -33,14 +33,8 @@ func NewEnv() (*Env, error) {
 	if err != nil {
 		return nil, err
 	}
-	redisDatabase, err := getEnv("REDIS_DATABASE")
-	if err != nil {
-		return nil, err
-	}
-	redisPassword, err := getEnv("REDIS_PASSWORD")
-	if err != nil {
-		return nil, err
-	}
+	redisDatabase := os.Getenv("REDIS_DATABASE")
+	redisPassword := os.Getenv("REDIS_PASSWORD")
 	return &Env{
 		Env:                        appEnv,
 		Port:                       port,
