@@ -23,63 +23,22 @@ var grpcapiFlag = flag.Bool("grpcapi", true, "start grpc api")
 func main() {
 	flag.Parse()
 
-	env, err := config.InitializeEnv()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to initialize env: %s\n", err)
-		os.Exit(1)
-	}
+	env := initializeEnv()
 
-	conf, configCleanup, err := config.InitializeConfig(env)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to initialize config: %s\n", err)
-		os.Exit(1)
-	}
+	conf, configCleanup := initializeConfig(env)
 	defer configCleanup()
 
-	a := application.Aggregators{}
-	if *identityAggregatorFlag {
-		a = append(a, identity.InitializeAggregator(conf))
-	}
-	if *viewingAggregatorFlag {
-		a = append(a, viewing.InitializeAggregator(conf))
-	}
+	a := initializeAggregators(conf)
 	a.Start()
 	defer a.Stop()
 
-	c := application.Components{}
-	if *identityComponentFlag {
-		c = append(c, identity.InitializeComponent(conf))
-	}
+	c := initializeComponents(conf)
 	c.Start()
 	defer c.Stop()
 
-	var webapiShutdown func()
+	webapiShutdown := initializeWebAPI(conf)
 
-	if *webapiFlag {
-		go func() {
-			var api web.API
-			api, webapiShutdown, err = web.InitializeAPI(conf)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "failed to initialize web api: %s\n", err)
-				os.Exit(1)
-			}
-			api.Listen()
-		}()
-	}
-
-	var grpcServerShutdown func()
-
-	if *grpcapiFlag {
-		go func() {
-			var server *rpc.Server
-			server, grpcServerShutdown, err = rpc.InitializeServer(conf)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "failed to initialize grpc server: %s\n", err)
-				os.Exit(1)
-			}
-			server.Listen()
-		}()
-	}
+	grpcServerShutdown := initializeGRPCServer(conf)
 
 	// Wait for ctrl-c to exit
 	ch := make(chan os.Signal, 1)
@@ -94,4 +53,79 @@ func main() {
 	if grpcServerShutdown != nil {
 		grpcServerShutdown()
 	}
+}
+
+func initializeEnv() *config.Env {
+	env, err := config.InitializeEnv()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to initialize env: %s\n", err)
+		os.Exit(1)
+	}
+	return env
+}
+
+func initializeConfig(env *config.Env) (*config.Config, func()) {
+	conf, configCleanup, err := config.InitializeConfig(env)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to initialize config: %s\n", err)
+		os.Exit(1)
+	}
+	return conf, configCleanup
+}
+
+func initializeAggregators(conf *config.Config) application.Aggregators {
+	a := application.Aggregators{}
+	if *identityAggregatorFlag {
+		a = append(a, identity.InitializeAggregator(conf))
+	}
+	if *viewingAggregatorFlag {
+		a = append(a, viewing.InitializeAggregator(conf))
+	}
+	return a
+}
+
+func initializeComponents(conf *config.Config) application.Components {
+	c := application.Components{}
+	if *identityComponentFlag {
+		c = append(c, identity.InitializeComponent(conf))
+	}
+	return c
+}
+
+func initializeWebAPI(conf *config.Config) func() {
+	var webapiShutdown func()
+
+	if *webapiFlag {
+		go func() {
+			var api web.API
+			var err error
+			api, webapiShutdown, err = web.InitializeAPI(conf)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "failed to initialize web api: %s\n", err)
+				os.Exit(1)
+			}
+			api.Listen()
+		}()
+	}
+
+	return webapiShutdown
+}
+
+func initializeGRPCServer(conf *config.Config) func() {
+	var grpcServerShutdown func()
+
+	if *grpcapiFlag {
+		go func() {
+			var server *rpc.Server
+			var err error
+			server, grpcServerShutdown, err = rpc.InitializeServer(conf)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "failed to initialize grpc server: %s\n", err)
+				os.Exit(1)
+			}
+			server.Listen()
+		}()
+	}
+
+	return grpcServerShutdown
 }
