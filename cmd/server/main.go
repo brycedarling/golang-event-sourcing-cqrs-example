@@ -17,8 +17,8 @@ import (
 var identityAggregatorFlag = flag.Bool("ia", true, "start identity aggregator")
 var viewingAggregatorFlag = flag.Bool("va", true, "start viewing aggregator")
 var identityComponentFlag = flag.Bool("ic", true, "start identity component")
-var webapiFlag = flag.Bool("webapi", true, "start web api")
-var grpcapiFlag = flag.Bool("grpcapi", true, "start grpc api")
+var webFlag = flag.Bool("web", true, "start web api")
+var grpcFlag = flag.Bool("grpc", true, "start grpc server")
 
 func main() {
 	flag.Parse()
@@ -95,7 +95,7 @@ func initializeComponents(conf *config.Config) application.Components {
 func initializeWebAPI(conf *config.Config) func() {
 	var webapiShutdown func()
 
-	if *webapiFlag {
+	if *webFlag {
 		go func() {
 			var api web.API
 			var err error
@@ -114,7 +114,7 @@ func initializeWebAPI(conf *config.Config) func() {
 func initializeGRPCServer(conf *config.Config) func() {
 	var grpcServerShutdown func()
 
-	if *grpcapiFlag {
+	if *grpcFlag {
 		go func() {
 			var server *rpc.Server
 			var err error
