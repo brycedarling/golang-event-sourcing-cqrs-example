@@ -55,11 +55,13 @@ services:
     build: .
     ports:
       - ${PORT}:${PORT}
+      - 50051:50051
     environment:
       - APP_ENV=${APP_ENV}
       - PORT=${PORT}
       - EVENT_STORE_CONNECTION_STRING=${EVENT_STORE_CONNECTION_STRING}
       - QUERY_CONNECTION_STRING=${QUERY_CONNECTION_STRING}
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
     depends_on:
       - postgres
       - redis
